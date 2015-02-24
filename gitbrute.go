@@ -23,6 +23,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"regexp"
@@ -65,8 +66,17 @@ func main() {
 	}
 	msg := obj[i+2:]
 
+	var maxCommitBehind int64 = math.MaxInt64
+	if parentObj, err := exec.Command("git", "cat-file", "-p", "HEAD^").Output(); err == nil {
+		d, _ := getDate(obj, commiterDateRx)
+		pd, _ := getDate(parentObj, commiterDateRx)
+		if d.n >= pd.n {
+			maxCommitBehind = d.n - pd.n
+		}
+	}
+
 	possibilities := make(chan try, 512)
-	go explore(possibilities)
+	go explore(possibilities, int(maxCommitBehind))
 
 	winner := make(chan solution)
 	done := make(chan struct{})
@@ -148,13 +158,15 @@ type try struct {
 //     (2, 2)
 //
 //     ...
-func explore(c chan<- try) {
+func explore(c chan<- try, maxCommitBehind int) {
 	for max := 0; ; max++ {
-		for i := 0; i <= max-1; i++ {
+		for i := 0; i <= max-1 && i <= maxCommitBehind; i++ {
 			c <- try{i, max}
 		}
-		for j := 0; j <= max; j++ {
-			c <- try{max, j}
+		if max <= maxCommitBehind {
+			for j := 0; j <= max; j++ {
+				c <- try{max, j}
+			}
 		}
 	}
 }
