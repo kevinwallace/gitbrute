@@ -1,15 +1,15 @@
-gitbrute brute-forces a pair of author+committer timestamps such that
-the resulting git commit has your desired prefix.
+gitbrute adds a hidden, not-explicitly-supported-by-git field named
+'nonce' to the commit at HEAD, and brute forces its value such that
+the resulting git commit matches your desired pattern.
 
-It will find the most recent time that satisfies your prefix.
-
-Shorter prefixes match more quickly, of course. The author &
-committer timestamp are not kept in sync.
-
-Example: https://github.com/bradfitz/deadbeef
+Shorter prefixes match more quickly, of course.
 
 Usage:
 
-    go run gitbrute.go --prefix 000000
+    go run gitbrute.go --pattern ^000000
 
 This amends the last commit of the current repository.
+
+gitbrute is based on a program of the same name written by Brad Fitzpatrick
+<https://github.com/bradfitz/gitbrute>, although its behavior has diverged
+significantly.
