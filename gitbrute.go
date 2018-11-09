@@ -31,9 +31,11 @@ import (
 )
 
 var (
-	pattern = flag.String("pattern", "^[01]{7}", "Desired pattern")
-	force   = flag.Bool("force", false, "Re-run, even if current hash matches pattern")
-	cpu     = flag.Int("cpus", runtime.NumCPU(), "Number of CPUs to use. Defaults to number of processors.")
+	pattern    = flag.String("pattern", "^[01]{7}", "Desired pattern")
+	force      = flag.Bool("force", false, "Re-run, even if current hash matches pattern")
+	cpu        = flag.Int("cpus", runtime.NumCPU(), "Number of CPUs to use. Defaults to number of processors.")
+	nonceName  = flag.String("nonce-name", "nonce", "Name of nonce field to add to commit object")
+	nonceChars = flag.String("nonce-chars", "0123456789", "Characters set to use in nonce field value")
 
 	re *regexp.Regexp
 )
@@ -75,9 +77,8 @@ func fixHeader(obj []byte) []byte {
 	return obj
 }
 
-const nonceHeader = "\nnonce "
-
 func addOrFindNonce(obj []byte) ([]byte, int) {
+	nonceHeader := "\n" + *nonceName + " "
 	if !bytes.Contains(obj, []byte(nonceHeader)) {
 		i := bytes.Index(obj, []byte("\n\n"))
 		header := obj[:i]
@@ -93,6 +94,7 @@ func addOrFindNonce(obj []byte) ([]byte, int) {
 }
 
 func growNonce(obj []byte) []byte {
+	nonceHeader := "\n" + *nonceName + " "
 	i := bytes.Index(obj, []byte(nonceHeader)) + len(nonceHeader)
 	newObj := make([]byte, 0, len(obj)+1)
 	newObj = append(newObj, obj[:i]...)
@@ -103,7 +105,6 @@ func growNonce(obj []byte) []byte {
 }
 
 func bruteForce(obj []byte, winner chan<- []byte, possibilities <-chan try, done <-chan struct{}) {
-	const nonceChars = "0123456789"
 	var nonceIdx int
 	obj, nonceIdx = addOrFindNonce(obj)
 
@@ -124,8 +125,8 @@ func bruteForce(obj []byte, winner chan<- []byte, possibilities <-chan try, done
 					nonceIdx++
 					goto writeNonce
 				}
-				obj[i] = nonceChars[nonce%len(nonceChars)]
-				nonce /= len(nonceChars)
+				obj[i] = (*nonceChars)[nonce%len(*nonceChars)]
+				nonce /= len(*nonceChars)
 				i--
 			}
 
