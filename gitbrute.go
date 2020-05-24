@@ -192,7 +192,8 @@ func main() {
 		log.Fatalf("hash-object: %v", err)
 	}
 
-	cmd = exec.Command("git", "update-ref", "HEAD", strings.TrimSpace(hash.String()))
+	reflogMsg := strings.Join(os.Args, " ")
+	cmd = exec.Command("git", "update-ref", "-m", reflogMsg, "--create-reflog", "HEAD", strings.TrimSpace(hash.String()))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
